@@ -14,15 +14,15 @@ When selecting the project, I focused on three main criteria:
 - ✅ Minimal technology stack
 - ✅ Low complexity
 
-### ⚡ Fast Development Timeline
+#### ⚡ Fast Development Timeline
 
 My top priority was to choose a project I could complete quickly. After considering several ideas, I realized this one only required basic CRUD operations for the MVP, with no need for complex packages or third-party integrations.
 
-### 🧰 Minimal Technology Stack
+#### 🧰 Minimal Technology Stack
 
 I wanted to minimize the technologies involved. This project allowed me to skip a backend setup and use **Zustand** for global state management. Zustand stored all data locally, simulating backend behavior efficiently.
 
-### 🧠 Low Complexity
+#### 🧠 Low Complexity
 
 Alternative project ideas, like an Event Discovery Platform or a Garage Storage Marketplace, introduced added complexity such as geolocation, maps, or complex user interactions. I chose this project for its simplicity and clear scope.
 
