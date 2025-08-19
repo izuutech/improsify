@@ -49,7 +49,7 @@ Alternative project ideas, like an Event Discovery Platform, Garage Storage Mark
 
 ### 📈 Scaling
 
-- ☁️ **Backend Integration:** Use Firebase or a custom Node.js + MongoDB backend for real-time data and user management
+- ☁️ **Backend Integration:** Use custom Node.js + MongoDB backend for real-time data and user management
 - 🔄 **Cloud Sync:** Allow cross-device data access
 - ⚙️ **Performance Optimization:** Implement lazy loading and memoization for better app performance
 
