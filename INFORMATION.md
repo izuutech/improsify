@@ -24,7 +24,7 @@ I wanted to minimize the technologies involved. This project allowed me to skip 
 
 #### 🧠 Low Complexity
 
-Alternative project ideas, like an Event Discovery Platform or a Garage Storage Marketplace, introduced added complexity such as geolocation, maps, or complex user interactions. I chose this project for its simplicity and clear scope.
+Alternative project ideas, like an Event Discovery Platform, Garage Storage Marketplace or Skills & Services Trading Platform, introduced added complexity such as geolocation, maps, or complex user interactions. I chose this project for its simplicity and clear scope.
 
 ---
 
