@@ -59,3 +59,11 @@ Alternative project ideas, like an Event Discovery Platform, Garage Storage Mark
 - 🧪 **Testing:** Add unit and integration tests using Jest and React Native Testing Library
 - 📡 **API Layer:** Abstract backend logic to a service layer for clean integration
 - 🌐 **Offline Support:** Local persistence with background syncing when reconnected
+
+![Home Screen Preview](./src/assets/home.png)
+
+![Habit Screen Preview](./src/assets/habit.png)
+
+![Goals Screen Preview](./src/assets/goals.png)
+
+![Rewared Screen Preview](./src/assets/reward.png)
