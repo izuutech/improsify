@@ -9,7 +9,7 @@ import {theme} from '../styles/theme';
 
 export const HomeScreen: React.FC = () => {
   const stats = useStore(state => state.stats);
-  const {updateLoginStreak} = useStore(state => state);
+  const {updateLoginStreak, resetStore} = useStore(state => state);
   const habits = useStore(state => state.habits);
   const goals = useStore(state => state.goals);
 
@@ -17,6 +17,7 @@ export const HomeScreen: React.FC = () => {
   const activeGoals = goals.filter(g => !g.completed).slice(0, 2);
 
   useEffect(() => {
+    // resetStore();
     updateLoginStreak();
   }, [stats]);
 
@@ -73,6 +74,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: theme.colors.background,
     padding: 16,
+    paddingBottom: 50,
   },
   streakRow: {
     flexDirection: 'row',

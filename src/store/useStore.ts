@@ -15,6 +15,7 @@ type Store = {
   unlockReward: (rewardId: string) => void;
   updateLoginStreak: () => void;
   updateStats: (xp: number) => void;
+  resetStore: () => void;
 };
 
 const initialStats: UserStats = {
@@ -84,14 +85,19 @@ export const useStore = create<Store>()(
 
       completeHabit: habitId =>
         set(state => {
+          let completedCountIncrement = 0;
+          let xpEarned = 0;
+
           const habits = state.habits.map(habit => {
             if (habit.id === habitId) {
               const newStreak = habit.completedToday
                 ? habit.currentStreak
                 : habit.currentStreak + 1;
-              const xpEarned = habit.xp * (habit.completedToday ? 0.5 : 1);
+              xpEarned = habit.xp * (habit.completedToday ? 0.5 : 1);
 
-              get().updateStats(xpEarned);
+              if (!habit.completedToday) {
+                completedCountIncrement = 1;
+              }
 
               return {
                 ...habit,
@@ -104,7 +110,21 @@ export const useStore = create<Store>()(
             return habit;
           });
 
-          return {habits};
+          const updatedStats = computeUpdatedStats(
+            state.stats,
+            xpEarned,
+            state.rewards,
+          );
+
+          return {
+            habits,
+            stats: {
+              ...updatedStats,
+              completedHabits:
+                updatedStats.completedHabits + completedCountIncrement,
+            },
+            rewards: unlockEligibleRewards(state.rewards, updatedStats.totalXP),
+          };
         }),
 
       addGoal: goal =>
@@ -116,27 +136,51 @@ export const useStore = create<Store>()(
           },
         })),
 
-      updateGoalProgress: (goalId, progress) =>
+      updateGoalProgress: (goalId, newProgress) =>
         set(state => {
+          let completedCountIncrement = 0;
+          let xpEarned = 0;
+
           const goals = state.goals.map(goal => {
             if (goal.id === goalId) {
-              const isCompleted = progress >= 100 && !goal.completed;
-              const xpEarned = isCompleted ? goal.xp : 0;
+              const previousProgress = goal.progress;
+              const clampedProgress = Math.min(newProgress, 100);
+              const progressDelta = Math.max(
+                clampedProgress - previousProgress,
+                0,
+              );
 
+              xpEarned = (progressDelta / 100) * goal.xp;
+
+              const isCompleted = clampedProgress >= 100 && !goal.completed;
               if (isCompleted) {
-                get().updateStats(xpEarned);
+                completedCountIncrement = 1;
               }
 
               return {
                 ...goal,
-                progress,
-                completed: progress >= 100,
+                progress: clampedProgress,
+                completed: clampedProgress >= 100,
               };
             }
             return goal;
           });
 
-          return {goals};
+          const updatedStats = computeUpdatedStats(
+            state.stats,
+            xpEarned,
+            state.rewards,
+          );
+
+          return {
+            goals,
+            stats: {
+              ...updatedStats,
+              completedGoals:
+                updatedStats.completedGoals + completedCountIncrement,
+            },
+            rewards: unlockEligibleRewards(state.rewards, updatedStats.totalXP),
+          };
         }),
 
       unlockReward: rewardId =>
@@ -155,6 +199,7 @@ export const useStore = create<Store>()(
             return reward;
           }),
         })),
+
       updateLoginStreak: () =>
         set(state => {
           const lastLogin = state.stats.lastLoginDate
@@ -169,20 +214,19 @@ export const useStore = create<Store>()(
             const lastLoginStr = lastLogin.toISOString().split('T')[0];
 
             if (lastLoginStr === todayStr) {
-              // Already logged in today – no update
-              return {};
+              return {}; // Already logged in today
             }
 
             const diffInTime = today.getTime() - lastLogin.getTime();
             const diffInDays = Math.floor(diffInTime / (1000 * 60 * 60 * 24));
 
             if (diffInDays === 1) {
-              loginStreak += 1; // continue streak
+              loginStreak += 1;
             } else {
-              loginStreak = 1; // reset streak
+              loginStreak = 1;
             }
           } else {
-            loginStreak = 1; // first time login
+            loginStreak = 1;
           }
 
           return {
@@ -193,45 +237,67 @@ export const useStore = create<Store>()(
             },
           };
         }),
+
       updateStats: xp =>
         set(state => {
-          const newTotalXP = state.stats.totalXP + xp;
-          const currentLevelXP = state.stats.currentLevelXP + xp;
-
-          let level = state.stats.level;
-          let xpToNextLevel = state.stats.xpToNextLevel;
-          let remainingXP = currentLevelXP;
-
-          while (remainingXP >= xpToNextLevel) {
-            remainingXP -= xpToNextLevel;
-            level += 1;
-            xpToNextLevel = Math.floor(xpToNextLevel * 1.2);
-          }
-
-          // Unlock rewards if possible
-          state.rewards.forEach(reward => {
-            if (!reward.unlocked && newTotalXP >= reward.xpCost) {
-              get().unlockReward(reward.id);
-            }
-          });
-
+          const updatedStats = computeUpdatedStats(
+            state.stats,
+            xp,
+            state.rewards,
+          );
           return {
-            stats: {
-              ...state.stats,
-              totalXP: newTotalXP,
-              level,
-              currentLevelXP: remainingXP,
-              xpToNextLevel,
-              completedHabits: state.habits.filter(h => h.completedToday)
-                .length,
-              completedGoals: state.goals.filter(g => g.completed).length,
-            },
+            stats: updatedStats,
+            rewards: unlockEligibleRewards(state.rewards, updatedStats.totalXP),
           };
         }),
+
+      resetStore: () =>
+        set(() => ({
+          habits: [],
+          goals: [],
+          rewards: initialRewards,
+          stats: initialStats,
+        })),
     }),
     {
-      name: 'user-progress-storage', // unique name for storage key
+      name: 'user-progress-storage',
       storage: createJSONStorage(() => AsyncStorage),
     },
   ),
 );
+
+// 🔧 Utility: Level progression and XP tracking
+function computeUpdatedStats(
+  stats: UserStats,
+  xpGained: number,
+  rewards: Reward[],
+): UserStats {
+  let newTotalXP = stats.totalXP + xpGained;
+  let currentLevelXP = stats.currentLevelXP + xpGained;
+  let level = stats.level;
+  let xpToNextLevel = stats.xpToNextLevel;
+
+  while (currentLevelXP >= xpToNextLevel) {
+    currentLevelXP -= xpToNextLevel;
+    level += 1;
+    xpToNextLevel = Math.floor(xpToNextLevel * 1.2);
+  }
+
+  return {
+    ...stats,
+    totalXP: newTotalXP,
+    currentLevelXP,
+    level,
+    xpToNextLevel,
+  };
+}
+
+// 🔓 Utility: Unlock rewards based on XP
+function unlockEligibleRewards(rewards: Reward[], totalXP: number): Reward[] {
+  return rewards.map(reward => {
+    if (!reward.unlocked && totalXP >= reward.xpCost) {
+      return {...reward, unlocked: true};
+    }
+    return reward;
+  });
+}

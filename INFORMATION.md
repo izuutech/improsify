@@ -6,6 +6,12 @@ This app enables users to document their habits and goals while tracking progres
 
 ---
 
+## Download
+
+To install the app please click. [Download App](https://drive.google.com/file/d/1HiAc-2pr7juH6oV1TvsYiOOA_e7jLstD/view?usp=drive_link)
+
+---
+
 ## 💡 Project Selection Thought Process
 
 When selecting the project, I focused on three main criteria:
